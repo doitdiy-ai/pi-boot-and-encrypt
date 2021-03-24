@@ -172,12 +172,29 @@ $BootConfigHostname.location            = New-Object System.Drawing.Point(165,35
 $BootConfigHostname.Font                = 'Microsoft Sans Serif,10'
 $BootConfigHostname.Visible             = $false
 
+$BootConfigHostnameCryptLabel                = New-Object system.Windows.Forms.Label
+$BootConfigHostnameCryptLabel.text           = "Decrypt Hostname:"
+$BootConfigHostnameCryptLabel.AutoSize       = $true
+$BootConfigHostnameCryptLabel.width          = 25
+$BootConfigHostnameCryptLabel.height         = 20
+$BootConfigHostnameCryptLabel.location       = New-Object System.Drawing.Point(20,380)
+$BootConfigHostnameCryptLabel.Font           = 'Microsoft Sans Serif,10,style=Bold'
+$BootConfigHostnameCryptLabel.Visible        = $false
+
+$BootConfigHostnameCrypt                     = New-Object system.Windows.Forms.TextBox
+$BootConfigHostnameCrypt.multiline           = $false
+$BootConfigHostnameCrypt.width               = 314
+$BootConfigHostnameCrypt.height              = 20
+$BootConfigHostnameCrypt.location            = New-Object System.Drawing.Point(165,380)
+$BootConfigHostnameCrypt.Font                = 'Microsoft Sans Serif,10'
+$BootConfigHostnameCrypt.Visible             = $false
+
 $AddBootConfigBtn                   = New-Object system.Windows.Forms.Button
 $AddBootConfigBtn.BackColor         = "#ff7b00"
 $AddBootConfigBtn.text              = "Configure"
 $AddBootConfigBtn.width             = 90
 $AddBootConfigBtn.height            = 30
-$AddBootConfigBtn.location          = New-Object System.Drawing.Point(510,400)
+$AddBootConfigBtn.location          = New-Object System.Drawing.Point(510,410)
 $AddBootConfigBtn.Font              = 'Microsoft Sans Serif,10'
 $AddBootConfigBtn.ForeColor         = "#ffffff"
 $AddBootConfigBtn.Visible           = $false
@@ -188,14 +205,14 @@ $cancelBtn.BackColor             = "#ffffff"
 $cancelBtn.text                  = "Cancel"
 $cancelBtn.width                 = 90
 $cancelBtn.height                = 30
-$cancelBtn.location              = New-Object System.Drawing.Point(400,400)
+$cancelBtn.location              = New-Object System.Drawing.Point(400,410)
 $cancelBtn.Font                  = 'Microsoft Sans Serif,10'
 $cancelBtn.ForeColor             = "#000"
 $cancelBtn.DialogResult          = [System.Windows.Forms.DialogResult]::Cancel
 $LocalBootConfigForm.CancelButton   = $cancelBtn
 $LocalBootConfigForm.Controls.Add($cancelBtn)
 
-$LocalBootConfigForm.controls.AddRange(@($Title,$Description,$BootConfigStatus,$BootConfigFound,$BootConfigDriveLabel,$BootConfigDrive,$BootConfigDetails, $BootConfigModifyPWLabel, $BootConfigModifyPW, $BootConfigPiPasswordLabel, $BootConfigPiPassword, $BootConfigDecryptPasswordLabel, $BootConfigDecryptPassword, $BootConfigSSIDLabel, $BootConfigSSID, $BootConfigSSIDPWLabel, $BootConfigSSIDPW, $BootConfigHostnameLabel, $BootConfigHostname,$AddBootConfigBtn,$cancelBtn ))
+$LocalBootConfigForm.controls.AddRange(@($Title,$Description,$BootConfigStatus,$BootConfigFound,$BootConfigDriveLabel,$BootConfigDrive,$BootConfigDetails, $BootConfigModifyPWLabel, $BootConfigModifyPW, $BootConfigPiPasswordLabel, $BootConfigPiPassword, $BootConfigDecryptPasswordLabel, $BootConfigDecryptPassword, $BootConfigSSIDLabel, $BootConfigSSID, $BootConfigSSIDPWLabel, $BootConfigSSIDPW, $BootConfigHostnameLabel, $BootConfigHostname, $BootConfigHostnameCryptLabel, $BootConfigHostnameCrypt, $AddBootConfigBtn,$cancelBtn ))
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -225,12 +242,13 @@ function Hide-Console
 function AddBootConfig {
   $BootConfigFound.ForeColor = "#000000"
   $BootConfigFound.Text = 'Adding BootConfig...'
-  $PiPW = $BootConfigPiPassword.Text
   $PiPWChecked = $BootConfigModifyPW
+  if ($PiPWChecked.Checked){$PiPW = $BootConfigPiPassword.Text}
   $DecryptPW = $BootConfigDecryptPassword.Text
   $SSID = $BootConfigSSID.Text
   $WifiPW = $BootConfigSSIDPW.Text
   $Hostname = $BootConfigHostname.Text
+  $HostnameCrypt = $BootConfigHostnameCrypt.Text
   $SDCard = $BootConfigDrive.SelectedItem
 
 function Get-Md5Crypt {
@@ -349,7 +367,7 @@ function Get-Md5Crypt {
 
   '{0}{1}${2}' -f $utf8.GetString($magic),$salt,$final
 }
-$PiPWCrypt = Get-Md5Crypt -String $PiPW -SaltSize 8
+if ($PiPWChecked.Checked){$PiPWCrypt = Get-Md5Crypt -String $PiPW -SaltSize 8}
 $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
 
 #--------------[nologin]-------------------
@@ -478,7 +496,10 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   copy_exec /bin/lsblk /sbin
   copy_exec /sbin/e2fsck /sbin
   copy_exec /sbin/cryptsetup-reencrypt /sbin
-
+  hostnamecrypt=raspi8gbcrypt
+  sed -i "s/^export IP=.*/export IP=::::
+'@ + $HostnameCrypt + @'
+/" ${DESTDIR}/init
   exit 0
   '
   echo "$myHook" > /etc/initramfs-tools/hooks/myHook
@@ -890,6 +911,8 @@ network={
   $BootConfigModifyPW.Visible = $false
   $BootConfigHostnameLabel.Visible = $false
   $BootConfigHostname.Visible = $false
+  $BootConfigHostnameCryptLabel.Visible = $false
+  $BootConfigHostnameCrypt.Visible = $false
   $cancelBtn.text = "Close"
 }
 
@@ -927,6 +950,8 @@ If ($BootDrives.length -ne 0) {
   $BootConfigModifyPW.Visible = $true
   $BootConfigHostnameLabel.Visible = $true
   $BootConfigHostname.Visible = $true
+  $BootConfigHostnameCryptLabel.Visible = $true
+  $BootConfigHostnameCrypt.Visible = $true
 }else{
   $BootConfigFound.text = "No SD Cards found"
   $BootConfigFound.ForeColor = "#D0021B"
@@ -936,7 +961,7 @@ If ($BootDrives.length -ne 0) {
 $AddBootConfigBtn.Add_Click({ AddBootConfig })
 
 $BootConfigDrive.Add_SelectedIndexChanged({
-    $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+    $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
 })
 
 $BootConfigModifyPW.Add_CheckStateChanged({
@@ -948,27 +973,31 @@ $BootConfigModifyPW.Add_CheckStateChanged({
       $BootConfigPiPassword.Enabled = $false
       $BootConfigPiPassword.Text = ""
     }
-    $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+    $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
 })
 
 $BootConfigPiPassword.Add_TextChanged({
-  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
 })
 
 $BootConfigSSID.Add_TextChanged({
-  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
 })
 
 $BootConfigSSIDPW.Add_TextChanged({
-  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
 })
 
 $BootConfigHostname.Add_TextChanged({
-  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+})
+
+$BootConfigHostnameCrypt.Add_TextChanged({
+  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
 })
 
 $BootConfigDecryptPassword.Add_TextChanged({
-  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
+  $AddBootConfigBtn.Enabled = (!(($BootConfigPiPassword.Text.Length -gt 0) -xor $BootConfigModifyPW.Checked) -and ($BootConfigSSID.Text.Length -gt 0) -and ($BootConfigSSIDPW.Text.Length -gt 0) -and ($BootConfigHostname.Text.Length -gt 0) -and ($BootConfigHostnameCrypt.Text.Length -gt 0) -and ($BootConfigDrive.SelectedItem.Length -gt 0) -and ($BootConfigDecryptPassword.Text.Length -gt 0))
 })
 
 [void]$LocalBootConfigForm.ShowDialog()
