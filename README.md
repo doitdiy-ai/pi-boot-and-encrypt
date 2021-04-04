@@ -23,7 +23,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
 ###### The three boots
 
 - First boot:
- - __No action needs to be taken__, the activities below all happen in the background.
+  - __No action needs to be taken__, the activities below all happen in the background.
  - Enable SSH, VNC, copy public keys to the sd card, set the hostname, enable camera, set screen do_resolution
  - Set the timezone (to Central...), locale, keyboard layout
  - Set the pi password (note, no plaintext password here. Password is included as a md5crypt hash), set the password to expired (so at first login, the user has to enter a new password) and lock the user account (it'll be unlocked later on)
