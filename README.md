@@ -24,20 +24,20 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
 
 - First boot:
   - __No action needs to be taken__, the activities below all happen in the background.
- - Enable SSH, VNC, copy public keys to the sd card, set the hostname, enable camera, set screen do_resolution
- - Set the timezone (to Central...), locale, keyboard layout
- - Set the pi password (note, no plaintext password here. Password is included as a md5crypt hash), set the password to expired (so at first login, the user has to enter a new password) and lock the user account (it'll be unlocked later on)
- - Move some bash scripts to the ext4 main file system and set up the first bash script to run after the first reboot
- - Reboot
+  - Enable SSH, VNC, copy public keys to the sd card, set the hostname, enable camera, set screen do_resolution
+  - Set the timezone (to Central...), locale, keyboard layout
+  - Set the pi password (note, no plaintext password here. Password is included as a md5crypt hash), set the password to expired (so at first login, the user has to enter a new password) and lock the user account (it'll be unlocked later on)
+  - Move some bash scripts to the ext4 main file system and set up the first bash script to run after the first reboot
+  - Reboot
 - Second boot
- - __Still no actions need to be taken__, the below activities also happen in the background, but they will take some time (about 5 minutes), so __be patient__.
- - __The pi user still cannot log on during this boot sequence__.
- - The pre_encrypt shell script runs during this phase.
- - It's main task is to set up initramfs and dropbear
- - Initramfs is a small file system that will run at boot up. Once the main file system is encrypted, initramfs is needed to be able to unlock the main file system before you can boot into that.
- - Dropbear is a small SSH server that needs to be added to initramfs, so you can connect to it using SSH (keeping everything headless)
- - The creation of initramfs takes about 4 minutes, hence the long wait.
- - After it completes, the Raspberry Pi will reboot again.
+  - __Still no actions need to be taken__, the below activities also happen in the background, but they will take some time (about 5 minutes), so __be patient__.
+  - __The pi user still cannot log on during this boot sequence__.
+  - The pre_encrypt shell script runs during this phase.
+  - It's main task is to set up initramfs and dropbear
+  - Initramfs is a small file system that will run at boot up. Once the main file system is encrypted, initramfs is needed to be able to unlock the main file system before you can boot into that.
+  - Dropbear is a small SSH server that needs to be added to initramfs, so you can connect to it using SSH (keeping everything headless)
+  - The creation of initramfs takes about 4 minutes, hence the long wait.
+  - After it completes, the Raspberry Pi will reboot again.
 - Third boot
   - Now, the Raspberry Pi will boot into initramfs, where we'll prepare the main filesystem for encryption
   - Give it a few minutes for this boot to complete and the Raspberry Pi to connect to your WiFi network
