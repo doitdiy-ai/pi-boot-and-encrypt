@@ -43,7 +43,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
   - Give it a few minutes for this boot to complete and the Raspberry Pi to connect to your WiFi network
   - Connect to it using SSH and using the encrypt hostname (raspi8gbcrypt in my example above). On the Windows PC, in a cmd window enter:
 
-    >ssh root@raspi8gbcrypt.lan -p 23
+    >ssh root<span>@</span>raspi8gbcrypt.lan -p 23
   - The initramfs SSH port is set to 23 (which officially is the telnet port..). This is done to keep the server signature checks that are done by the windows SSH clients separate when logging in to either initramfs vs. the main filesystem
   - After running the SSH command above, you'll be:
     - Logged in right away (meaning your SSH keys were not passphrase protected, which is not advisable)
@@ -77,14 +77,14 @@ The above is all a one-time setup. In normal usage, when the Raspberry Pi is reb
 - Wait a while to give it time to connect to the WiFi Network
 - Connect via ssh to the Raspberry Pi:
 
-  > ssh root@raspi8gbcrypt.lan -p 23
+  > ssh root<span>@</span>raspi8gbcrypt.lan -p 23
 - After you're logged in, type:
 
   > cryptroot-unlock
 - It'll ask your for the unlock passphrase that originally entered during the third boot phase. After that, it'll unlock the main file system and reboot.
 - When the reboot completes, you can SSH in:
 
-  > ssh pi@raspi8gb.lan
+  > ssh pi<span>@</span>raspi8gb.lan
 
 Or, you can VNC into the Raspberry Pi.
 
