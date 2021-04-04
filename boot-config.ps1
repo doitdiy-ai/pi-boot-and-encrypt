@@ -401,6 +401,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
 #!/bin/bash
   update-rpi-initramfs -u
   systemctl disable two_time_script.service
+  passwd -u pi
   rm /etc/nologin
 '@
   Set-Content -Path $postencrypt -Value $postencrypttext -NoNewLine
@@ -468,7 +469,11 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
 
   sed -i 's%echo "root:\*:0:0::${home#$DESTDIR}:/bin/sh" >"$DESTDIR/etc/passwd"%mypassword='"'$mypassword'"'\necho "root:$mypassword:0:0::${home#$DESTDIR}:/bin/sh" >"$DESTDIR/etc/passwd"%' /usr/share/initramfs-tools/hooks/dropbear
 
-  echo 'DROPBEAR_OPTIONS="-R"' >> /etc/dropbear-initramfs/config
+  echo 'DROPBEAR_OPTIONS="-R -p 23"' >> /etc/dropbear-initramfs/config
+  cat /boot/*.pub >> /etc/dropbear-initramfs/authorized_keys
+  mkdir /home/pi/.ssh
+  runuser -u pi cat /boot/*.pub >> /home/pi/.ssh/authorized_keys
+  rm /boot/*.pub
 
   myHook='#!/bin/sh
 
@@ -661,11 +666,8 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   echo "CRYPTSETUP=y" >> /etc/cryptsetup-initramfs/conf-hook
   cp /boot/nologin /etc/nologin
 
-  ssh-keygen -f key -b 4096 -N hello
-  cp /boot/nologin /etc/nologin
-
   #copy it to dropbear
-  cp key.pub /etc/dropbear-initramfs/authorized_keys
+  #cp key.pub /etc/dropbear-initramfs/authorized_keys
 
   sed -i '$s/$/ cryptdevice=\/dev\/mmcblk0p2:sdcard/' /boot/cmdline.txt
 
@@ -795,9 +797,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   Enabling service for the second reboot.
   " > /dev/tty1
   systemctl enable two_time_script.service
-  echo "Enabling user pi, and rebooting." > /dev/tty1
-  passwd -u pi
-  rm /etc/nologin
+  echo "Rebooting" > /dev/tty1
   reboot
 
 '@
@@ -813,6 +813,7 @@ Set-Content -Path $preencrypt -Value $preencrypttext -NoNewLine
     Move-Item -Path $Cmdline -Destination ($SDCard + "cmdline.bak") -Force
     Set-Content -Path $Cmdline -Value $CmdlineContent -NoNewLine
     Remove-Item -Path ($SDCard + "cmdline.bak") -Force
+    Copy-Item -Path ($HOME + "\.ssh\*.pub") -Destination ($SDCard)
 
 
 #--------------[unattended file]-----------------
@@ -825,6 +826,7 @@ sed -i `'s| init=.*||`' /boot/cmdline.txt
 # 2. THE USEFUL PART OF THE SCRIPT
 # Enable SSH
 raspi-config nonint do_ssh 0
+cat /boot/*.pub >> /home/pi/.ssh/authorized_keys
 # Enable VNC
 raspi-config nonint do_vnc 0
 # Change the hostname to something recognizable
