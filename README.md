@@ -71,6 +71,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
 
 This completes the full setup, including the encryption of the main file system.
 
+#### Normal Usage
 This is all a one-time setup. In normal usage, when the Raspberry Pi is rebooted, the process to get it fully running is as follows:
 - Start the Raspberry Pi
 - Wait a while to give it time to connect to the WiFi Network
