@@ -64,10 +64,10 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
 
     > ssh pi@raspi8gb.lan
   - As above one of three things can happen:
-    - Logged in right away (meaning your SSH keys were not passphrase protected, which is definitely not advisable)
-    - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
-    - It'll ask for the password. This would be the password you entered in the powershell window in the 'Pi Password' field
- - After either of these, you'll be prompted to change the password of the pi user
+     - Logged in right away (meaning your SSH keys were not passphrase protected, which is definitely not advisable)
+     - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
+     - It'll ask for the password. This would be the password you entered in the powershell window in the 'Pi Password' field
+  - After either of these, you'll be prompted to change the password of the pi user
 
 This completes the full setup, including the encryption of the main file system.
 
@@ -75,12 +75,15 @@ This is all a one-time setup. In normal usage, when the Raspberry Pi is rebooted
 - Start the Raspberry Pi
 - Wait a while to give it time to connect to the WiFi Network
 - Connect via ssh to the Raspberry Pi:
-> ssh root@raspi8gbcrypt.lan -p 23
+
+  > ssh root@raspi8gbcrypt.lan -p 23
 - After you're logged in, type:
-> cryptroot-unlock
+
+  > cryptroot-unlock
 - It'll ask your for the unlock passphrase that originally entered during the third boot phase. After that, it'll unlock the main file system and reboot.
 - When the reboot completes, you can SSH in:
-> ssh pi@raspi8gb.lan
+
+  > ssh pi@raspi8gb.lan
 
 Or, you can VNC into the Raspberry Pi.
 
