@@ -42,6 +42,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
   - Now, the Raspberry Pi will boot into initramfs, where we'll prepare the main filesystem for encryption
   - Give it a few minutes for this boot to complete and the Raspberry Pi to connect to your WiFi network
   - Connect to it using SSH and using the encrypt hostname (raspi8gbcrypt in my example above). On the Windows PC, in a cmd window enter:
+
     >ssh root@raspi8gbcrypt.lan -p 23
   - The initramfs SSH port is set to 23 (which officially is the telnet port..). This is done to keep the server signature checks that are done by the windows SSH clients separate when logging in to either initramfs vs. the main filesystem
   - After running the SSH command above, you'll be:
@@ -49,6 +50,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
     - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
     - It'll ask for the password. This would be the password you entered in the powershell window in the 'Decrypt password' field
   - Now that you're logged in, type:
+
     > encrypt
   - It'll start up the encrypt.sh script, which does the steps needed to encrypt the main file system.
   - Some steps are time-consuming. In particular creating a backup of the file system before encryption, and then copying that backup into the encrypted file system, will take about 5 mintues each.
@@ -56,14 +58,15 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
   - After the main file system is encrypted, you'll have to enter that passphrase to unlock it. After that, the backup of the main file system is copied back into the main file system. Again, this'll take about 4 - 5 minutes.
   - Then, system will reboot into the main file system
 - Fourth boot
- - This is the final boot. The post_encrypt shell script will run here. It's main activity is to update the initramfs with the changes made after the third boot.
- - __The pi user is still locked__, as this step needs to complete first (or.. at least, it can't be interrupted by a user doing a reboot while the update is still running).
- - After the initramfs update completes, the pi user will be unlocked. Connect with SSH, this time using the hostname entered in the 'Hostname' field in the powershell script. In the example case that would be:
- > ssh pi@raspi8gb.lan
- - As above one of three things can happen:
-   - Logged in right away (meaning your SSH keys were not passphrase protected, which is definitely not advisable)
-   - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
-   - It'll ask for the password. This would be the password you entered in the powershell window in the 'Pi Password' field
+  - This is the final boot. The post_encrypt shell script will run here. It's main activity is to update the initramfs with the changes made after the third boot.
+  - __The pi user is still locked__, as this step needs to complete first (or.. at least, it can't be interrupted by a user doing a reboot while the update is still running).
+  - After the initramfs update completes, the pi user will be unlocked. Connect with SSH, this time using the hostname entered in the 'Hostname' field in the powershell script. In the example case that would be:
+
+    > ssh pi@raspi8gb.lan
+  - As above one of three things can happen:
+    - Logged in right away (meaning your SSH keys were not passphrase protected, which is definitely not advisable)
+    - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
+    - It'll ask for the password. This would be the password you entered in the powershell window in the 'Pi Password' field
  - After either of these, you'll be prompted to change the password of the pi user
 
 This completes the full setup, including the encryption of the main file system.
