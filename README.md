@@ -62,7 +62,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
   - __The pi user is still locked__, as this step needs to complete first (or.. at least, it can't be interrupted by a user doing a reboot while the update is still running).
   - After the initramfs update completes, the pi user will be unlocked. Connect with SSH, this time using the hostname entered in the 'Hostname' field in the powershell script. In the example case that would be:
 
-    > ssh pi@raspi8gb.lan
+    > ssh pi<span>@</span>raspi8gb.lan
   - As above one of three things can happen:
      - Logged in right away (meaning your SSH keys were not passphrase protected, which is definitely not advisable)
      - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
