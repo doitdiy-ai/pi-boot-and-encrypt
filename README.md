@@ -20,7 +20,7 @@ In the window that pops up, do the following:
 
 After that, hit the *Configure* button. Then eject the SD card, pop it in your Raspberry Pi and turn it on. While not necessary, it'll be helpful at this point to have a screen connected to the Raspberry Pi, so you can see what is going on.
 
-###### The three boots
+##### The four boots
 
 - First boot:
   - __No action needs to be taken__, the activities below all happen in the background.
@@ -53,7 +53,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
 
     > encrypt
   - It'll start up the encrypt.sh script, which does the steps needed to encrypt the main file system.
-  - Some steps are time-consuming. In particular creating a backup of the file system before encryption, and then copying that backup into the encrypted file system, will take about 5 mintues each.
+  - Some steps are time-consuming. In particular creating a backup of the file system before encryption, and then copying that backup into the encrypted file system, will take about 5 minutes each.
   - After filesystem checks, reduction of the filesystem and the creation of a backup, the script will ask you for confirmation to created the encrypted filesystem and then you'll need to enter a passphrase. __Make it a strong passphrase and remember it!__ This passphrase provides protection against decryption of the main file system.
   - After the main file system is encrypted, you'll have to enter that passphrase to unlock it. After that, the backup of the main file system is copied back into the main file system. Again, this'll take about 4 - 5 minutes.
   - Then, system will reboot into the main file system
@@ -72,7 +72,7 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
 This completes the full setup, including the encryption of the main file system.
 
 #### Normal Usage
-This is all a one-time setup. In normal usage, when the Raspberry Pi is rebooted, the process to get it fully running is as follows:
+The above is all a one-time setup. In normal usage, when the Raspberry Pi is rebooted, the process to get it fully running is as follows:
 - Start the Raspberry Pi
 - Wait a while to give it time to connect to the WiFi Network
 - Connect via ssh to the Raspberry Pi:
