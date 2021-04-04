@@ -81,7 +81,7 @@ The above is all a one-time setup. In normal usage, when the Raspberry Pi is reb
 - After you're logged in, type:
 
   > cryptroot-unlock
-- It'll ask your for the unlock passphrase that originally entered during the third boot phase. After that, it'll unlock the main file system and reboot.
+- It'll ask for the unlock passphrase that you originally entered during the third boot phase. After that, it'll unlock the main file system and reboot.
 - When the reboot completes, you can SSH in:
 
   > ssh pi<span>@</span>raspi8gb.lan
