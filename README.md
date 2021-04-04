@@ -42,14 +42,14 @@ After that, hit the *Configure* button. Then eject the SD card, pop it in your R
   - Now, the Raspberry Pi will boot into initramfs, where we'll prepare the main filesystem for encryption
   - Give it a few minutes for this boot to complete and the Raspberry Pi to connect to your WiFi network
   - Connect to it using SSH and using the encrypt hostname (raspi8gbcrypt in my example above). On the Windows PC, in a cmd window enter:
-  >ssh root@raspi8gbcrypt.lan -p 23
+    >ssh root@raspi8gbcrypt.lan -p 23
   - The initramfs SSH port is set to 23 (which officially is the telnet port..). This is done to keep the server signature checks that are done by the windows SSH clients separate when logging in to either initramfs vs. the main filesystem
   - After running the SSH command above, you'll be:
-   - Logged in right away (meaning your SSH keys were not passphrase protected, which is not advisable)
-   - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
-   - It'll ask for the password. This would be the password you entered in the powershell window in the 'Decrypt password' field
+    - Logged in right away (meaning your SSH keys were not passphrase protected, which is not advisable)
+    - You'll be asked for a passphrase (which is the passphrase of your SSH key). If you don't know this passphrase, just hit Enter, and it'll ask for your password next
+    - It'll ask for the password. This would be the password you entered in the powershell window in the 'Decrypt password' field
   - Now that you're logged in, type:
-  > encrypt
+    > encrypt
   - It'll start up the encrypt.sh script, which does the steps needed to encrypt the main file system.
   - Some steps are time-consuming. In particular creating a backup of the file system before encryption, and then copying that backup into the encrypted file system, will take about 5 mintues each.
   - After filesystem checks, reduction of the filesystem and the creation of a backup, the script will ask you for confirmation to created the encrypted filesystem and then you'll need to enter a passphrase. __Make it a strong passphrase and remember it!__ This passphrase provides protection against decryption of the main file system.
