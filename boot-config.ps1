@@ -501,7 +501,6 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   copy_exec /bin/lsblk /sbin
   copy_exec /sbin/e2fsck /sbin
   copy_exec /sbin/cryptsetup-reencrypt /sbin
-  hostnamecrypt=raspi8gbcrypt
   sed -i "s/^export IP=.*/export IP=::::
 '@ + $HostnameCrypt + @'
 /" ${DESTDIR}/init
@@ -543,65 +542,68 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
 
   # passing the kernel version is required
   if [ -z "${version}" ]; then
-          echo >&2 "W: initramfs-tools: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
-          exit 2
+        echo >&2 "W: initramfs-tools: ${DPKG_MAINTSCRIPT_PACKAGE:-kernel package} did not pass a version number"
+        exit 2
   fi
 
   # exit if kernel does not need an initramfs
   if [ "$INITRD" = '"'"'No'"'"' ]; then
-          # delete initramfs entries in /boot/config.txt
-          /bin/sed -i '"'"'/^initramfs /d'"'"' /boot/config.txt
-          exit 0
+        # delete initramfs entries in /boot/config.txt
+        /bin/sed -i '"'"'/^initramfs /d'"'"' /boot/config.txt
+        exit 0
   fi
 
-  # there are only two kernel types: with and without postfix "-v7+" or "-v8+"
   currentversion="$(uname -r)"
+  regex="[0-9]+\.[0-9]+\.[0-9]+(.*)" #Kernelversion like 5.10.17-v7l+
 
-  # get §currenttype from $currentversion
-  currenttype="<no currenttype>"
-  echo $currentversion | grep -Pq '"'"'^\d+\.\d+\.\d+\+$'"'"'
-  [ $? -eq 0 ] && currenttype="+"
-  echo $currentversion | grep -Pq '"'"'^\d+\.\d+\.\d+-v[78]\+$'"'"'
-  [ $? -eq 0 ] && currenttype="${currentversion#*-}"
+  if [[ $currentversion =~ $regex ]]
+  then
+  currenttype="${BASH_REMATCH[1]}"
+  fi
 
-  # get $newtype from $version
-  newtype="<no newtype>"
-  echo $version | grep -Pq '"'"'^\d+\.\d+\.\d+\+$'"'"'
-  [ $? -eq 0 ] && newtype="+"
-  echo $version | grep -Pq '"'"'^\d+\.\d+\.\d+-v[78]\+$'"'"'
-  [ $? -eq 0 ] && newtype="${version#*-}"
+  if [[ $version =~ $regex ]]
+  then
+  newtype="${BASH_REMATCH[1]}"
+  fi
 
-  # we do nothing if the new kernel is not for the same kernel type then the current
+  #Uncomment the following 4 lines if you want to speed up updates and dont want to generate initramfs for different RPi types
+  # # we do nothing if the new kernel is not for the same kernel type then the current
   if [ "$newtype" != "$currenttype" ]; then
-          exit 0
+        exit 0
   fi
 
   # absolute file name of kernel image may be passed as a second argument;
   # create the initrd in the same directory
   if [ -n "$2" ]; then
-          bootdir=$(dirname "$2")
-          bootopt="-b ${bootdir}"
+        bootdir=$(dirname "$2")
+        bootopt="-b ${bootdir}"
   fi
 
   # avoid running multiple times
   if [ -n "$DEB_MAINT_PARAMS" ]; then
-          eval set -- "$DEB_MAINT_PARAMS"
-          if [ -z "$1" ] || [ "$1" != "configure" ]; then
-                  exit 0
-          fi
+        eval set -- "$DEB_MAINT_PARAMS"
+        if [ -z "$1" ] || [ "$1" != "configure" ]; then
+                exit 0
+        fi
   fi
 
-  # we_re good - create initramfs.  update runs do_bootloader
+  # were good - create initramfs.  update runs do_bootloader
   INITRAMFS_TOOLS_KERNEL_HOOK=1 update-initramfs -c -t -k "${version}" ${bootopt} >&2
 
-  # delete initramfs entries in /boot/config.txt
-  /bin/sed -i '"'"'/^initramfs /d'"'"' /boot/config.txt
+  # we do nothing if the new kernel is not for the same kernel type then the current
+  if [ "$newtype" = "$currenttype" ]; then
+        # delete initramfs entries in /boot/config.txt
+        /bin/sed -i '"'"'/^initramfs /d'"'"' /boot/config.txt
 
-  # insert initramfs entry in /boot/config.txt
-  INITRD_ENTRY="initramfs initrd.img-${version}"
-  echo >&2 $(basename "$0"): insert \'"'"'"$INITRD_ENTRY"\'"'"' into /boot/config.txt
-  /bin/sed -i "1i $INITRD_ENTRY" /boot/config.txt
+        # insert initramfs entry in /boot/config.txt
+        INITRD_ENTRY="initramfs initrd.img-${version}"
+        echo >&2 $(basename "$0"): insert \'"'"'"$INITRD_ENTRY"\'"'"' into /boot/config.txt
+        /bin/sed -i "1i $INITRD_ENTRY" /boot/config.txt
+  fi
+
   '
+
+
   echo "$rpi_initramfs_tools"> /etc/kernel/postinst.d/rpi-initramfs-tools
   chmod 755 /etc/kernel/postinst.d/rpi-initramfs-tools
 
