@@ -3,7 +3,7 @@
 #### Prepare a Raspberry Pi OS SD card before first boot on a Windows PC.
 
 This is a 100% script-based way to prepare an SD card that has a freshly installed Raspberry Pi image to run headless. It'll enable WiFi, SSH, VNC, hostname(s), filesystem encryption, etc.
-It only uses the FAT32 */boot* partition on the SD card or the .img file. You don't need to change anything about the ext4 (Linux) partition. And, it is done with just PowerShell.
+It only uses the FAT32 */boot* partition on the SD card or the .img file. You don't need to change anything about the ext4 (Linux) partition. And, it is done with just PowerShell. Check out [this blog post](https://doitdiy.ai/2021/06/20/raspberry-pi-automated-setup-with-full-disk-encryption/) or read on below to get it going
 
 ##### How to use it
 
