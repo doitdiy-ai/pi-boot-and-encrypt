@@ -241,7 +241,7 @@ function Hide-Console
 
 function AddBootConfig {
   $BootConfigFound.ForeColor = "#000000"
-  $BootConfigFound.Text = 'Adding BootConfig...'
+  $BootConfigFound.Text = 'Boot configuration completed...'
   $PiPWChecked = $BootConfigModifyPW
   if ($PiPWChecked.Checked){$PiPW = $BootConfigPiPassword.Text}
   $DecryptPW = $BootConfigDecryptPassword.Text
