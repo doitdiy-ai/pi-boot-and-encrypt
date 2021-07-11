@@ -12,11 +12,12 @@ It only needs the *boot-config.ps1* file. You'll need a freshly imaged SD card w
 In the window that pops up, do the following:
 - Select the drive that has the SD Cards
 - Enter a new password for the pi user (up to you, later on in the boot process, you'll be forced to change it)
-- Enter a password to log on during the initial boot process to initially encrypt the main file system and later to unlock that encrypted file systemd
+- Enter a password to log on during the initial boot process to initially encrypt the main file system and later to unlock that encrypted file system
 - Enter the WiFi ssid that you'll want the Raspberry Pi to connect to
 - Enter the WiFi passcode
 - Enter the hostname you want to use for the raspberry pi (example: raspi8gb)
 - Enter the hostname you want to use for during unlocking of the encrypted filesystem (example: raspi8gb.crypt)
+- If needed, modify the timezone and language-country settings
 
 After that, hit the *Configure* button. Then eject the SD card, pop it in your Raspberry Pi and turn it on. While not necessary, it'll be helpful at this point to have a screen connected to the Raspberry Pi, so you can see what is going on.
 
@@ -89,5 +90,8 @@ The above is all a one-time setup. In normal usage, when the Raspberry Pi is reb
 Or, you can VNC into the Raspberry Pi.
 
 One note about hostnames: in my WiFi network, I need to add .lan when doing SSH or VNC to the hostnames I entered in the powershell script. This may be different in different set ups. It could be .local instead of .lan, or... you may have to find out the IP address (easiest way to do that is to use the Fing app on a phone that is connected to the same WiFi network).
+
+#### But what about encrypting and existing filesystem?
+I recommend you start with a freshly imaged SD Card as described above. But... I have been able to do the encryption set up on an SD card that was not 'freshly' imaged and that had been used for other activities. So... you can try, but understand there is a chance you lose all data on the SD card. As with anything written here, no guarantees...
 
 That should be about it!

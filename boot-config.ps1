@@ -555,12 +555,15 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   $onetimetext=@'
   [Unit]
   Description=Unattended configuration of the Pi
+  Wants=network-online.target
+  After=network-online.target
 
   [Install]
   WantedBy=multi-user.target
 
   [Service]
   Type=oneshot
+  ExecStartPre=/bin/sh -c 'until ping -c1 google.com; do sleep 1; done;'
   ExecStart=/usr/local/bin/pre_encrypt.sh || true
 '@
   Set-Content -Path $onetime -Value $onetimetext -NoNewLine
@@ -597,6 +600,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   $preencrypt = ($SDCard + "pre_encrypt.sh")
   $preencrypttext = @'
 #!/bin/bash
+
   cp /boot/nologin /etc/nologin
   raspi-config nonint do_boot_behaviour B3
   echo "
@@ -604,7 +608,10 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   " > /dev/tty1
 
   sed -i 's/#INITRD=Yes/INITRD=Yes/' /etc/default/raspberrypi-kernel
-  apt --assume-yes install initramfs-tools dropbear secure-delete
+  echo "ping google" >> /boot/preencrypt.txt
+  ping -c 4 google.com 1>> /boot/preencrypt.txt 2>> /boot/preencrypt.txt
+  apt --assume-yes install initramfs-tools dropbear secure-delete 1>> /boot/preencrypt.txt 2>> /boot/preencrypt.txt
+
   cp /boot/nologin /etc/nologin
 
   sed -i 's/local flags="Fs"/local flags="F"/' /usr/share/initramfs-tools/scripts/init-premount/dropbear
@@ -814,13 +821,14 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
 
   #copy it to dropbear
   #cp key.pub /etc/dropbear-initramfs/authorized_keys
-
   sed -i '$s/$/ cryptdevice=\/dev\/mmcblk0p2:sdcard/' /boot/cmdline.txt
 
   ROOT_CMD="$(sed -n 's|^.*root=\(\S\+\)\s.*|\1|p' /boot/cmdline.txt)"
+
   sed -i -e "s|$ROOT_CMD|/dev/mapper/sdcard|g" /boot/cmdline.txt
 
   FSTAB_CMD="$(blkid | sed -n '/dev\/mmcblk0p2/s/.*\ PARTUUID=\"\([^\"]*\)\".*/\1/p')"
+
   sed -i -e "s|PARTUUID=$FSTAB_CMD|/dev/mapper/sdcard|g" /etc/fstab
 
   echo 'sdcard /dev/mmcblk0p2 none luks' | tee --append /etc/crypttab > /dev/null
@@ -847,6 +855,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   mv /boot/encrypt.sh ${DESTDIR}/usr/bin/encrypt
   fi
   '
+
   echo "$copy_encrypt" > /etc/initramfs-tools/hooks/copy_encrypt
   chmod +x /etc/initramfs-tools/hooks/copy_encrypt
 
@@ -877,6 +886,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   cp /lib/firmware/brcm/brcmfmac43456-sdio.* ${DESTDIR}/lib/firmware/brcm
   mkdir -p ${DESTDIR}/var/run/wpa_supplicant
   '
+
   echo "$enable_wireless" > /etc/initramfs-tools/hooks/enable-wireless
   chmod +x /etc/initramfs-tools/hooks/enable-wireless
 
@@ -910,6 +920,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   sleep 5
   ipconfig wlan0 &
   '
+
   echo "$a_enable_wireless" > /etc/initramfs-tools/scripts/init-premount/a_enable_wireless
   chmod +x /etc/initramfs-tools/scripts/init-premount/a_enable_wireless
 
@@ -929,6 +940,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   echo "Killing wpa_supplicant so the system takes over later."
   kill $(pidof wpa_supplicant)
   '
+
   echo "$kill_wireless" > /etc/initramfs-tools/scripts/local-bottom/kill_wireless
   chmod +x /etc/initramfs-tools/scripts/local-bottom/kill_wireless
   cp /boot/nologin /etc/nologin
@@ -936,12 +948,16 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   echo "
   Starting initramfs creation. This will take a few minutes...
   " > /dev/tty1
-  update-rpi-initramfs -c -k $(uname -r)
+
+  update-rpi-initramfs -c -k $(uname -r) 1>> /boot/preencrypt.txt 2>> /boot/preencrypt.txt
+
+  echo "Done with initramfs" > /dev/tty1
 
   systemctl disable one_time_script.service
   echo "
   Enabling service for the second reboot.
   " > /dev/tty1
+
   systemctl enable two_time_script.service
   echo "Rebooting" > /dev/tty1
   reboot
