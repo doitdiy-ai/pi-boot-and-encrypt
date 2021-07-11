@@ -91,7 +91,7 @@ Or, you can VNC into the Raspberry Pi.
 
 One note about hostnames: in my WiFi network, I need to add .lan when doing SSH or VNC to the hostnames I entered in the powershell script. This may be different in different set ups. It could be .local instead of .lan, or... you may have to find out the IP address (easiest way to do that is to use the Fing app on a phone that is connected to the same WiFi network).
 
-#### But what about encrypting and existing filesystem?
-I recommend you start with a freshly imaged SD Card as described above. But... I have been able to do the encryption set up on an SD card that was not 'freshly' imaged and that had been used for other activities. So... you can try, but understand there is a chance you lose all data on the SD card. As with anything written here, no guarantees...
+#### But what about encrypting an existing filesystem?
+I recommend you start with a freshly imaged SD card as described above. But... I have been able to do the encryption setup on an SD card that was not 'freshly' imaged and that had been used for other activities. So... you can try, but understand there is a chance you lose all data on the SD card. As with anything written here, no guarantees...
 
 That should be about it!
