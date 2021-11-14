@@ -335,6 +335,19 @@ ForEach ($Item in $Locales) {
 }
 $BootConfigLocale.SelectedItem = $BootConfigLocale.Items[$BootConfigLocale.FindString((Get-WinSystemLocale).Name)]
 
+$BootConfigDockerLabel                = New-Object system.Windows.Forms.Label
+$BootConfigDockerLabel.text           = "Install Docker for the Pi user:"
+$BootConfigDockerLabel.AutoSize       = $true
+$BootConfigDockerLabel.width          = 25
+$BootConfigDockerLabel.height         = 20
+$BootConfigDockerLabel.location       = New-Object System.Drawing.Point(490,290)
+$BootConfigDockerLabel.Font           = 'Microsoft Sans Serif,10,style=Bold'
+$BootConfigDockerLabel.Visible        = $false
+
+$BootConfigDocker                     = New-Object system.Windows.Forms.CheckBox
+$BootConfigDocker.location            = New-Object System.Drawing.Point(700,287)
+$BootConfigDocker.Visible             = $false
+
 $AddBootConfigBtn                   = New-Object system.Windows.Forms.Button
 $AddBootConfigBtn.BackColor         = "#ff7b00"
 $AddBootConfigBtn.text              = "Configure"
@@ -358,7 +371,7 @@ $cancelBtn.DialogResult          = [System.Windows.Forms.DialogResult]::Cancel
 $LocalBootConfigForm.CancelButton   = $cancelBtn
 $LocalBootConfigForm.Controls.Add($cancelBtn)
 
-$LocalBootConfigForm.controls.AddRange(@($Title,$Description,$BootConfigStatus,$BootConfigFound,$BootConfigDriveLabel,$BootConfigDrive,$BootConfigDetails, $BootConfigModifyPWLabel, $BootConfigModifyPW, $BootConfigPiPasswordLabel, $BootConfigPiPassword, $BootConfigDecryptPasswordLabel, $BootConfigDecryptPassword, $BootConfigSSIDLabel, $BootConfigSSID, $BootConfigSSIDPWLabel, $BootConfigSSIDPW, $BootConfigHostnameLabel, $BootConfigHostname, $BootConfigHostnameCryptLabel, $BootConfigHostnameCrypt, $BootConfigTZLabel, $BootConfigTZ, $BootConfigLocaleLabel, $BootConfigLocale, $AddBootConfigBtn,$cancelBtn ))
+$LocalBootConfigForm.controls.AddRange(@($Title,$Description,$BootConfigStatus,$BootConfigFound,$BootConfigDriveLabel,$BootConfigDrive,$BootConfigDetails, $BootConfigModifyPWLabel, $BootConfigModifyPW, $BootConfigPiPasswordLabel, $BootConfigPiPassword, $BootConfigDecryptPasswordLabel, $BootConfigDecryptPassword, $BootConfigSSIDLabel, $BootConfigSSID, $BootConfigSSIDPWLabel, $BootConfigSSIDPW, $BootConfigHostnameLabel, $BootConfigHostname, $BootConfigHostnameCryptLabel, $BootConfigHostnameCrypt, $BootConfigTZLabel, $BootConfigTZ, $BootConfigLocaleLabel, $BootConfigLocale, $BootConfigDockerLabel, $BootConfigDocker, $AddBootConfigBtn,$cancelBtn ))
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -394,6 +407,7 @@ function AddBootConfig {
   $Hostname = $BootConfigHostname.Text
   $HostnameCrypt = $BootConfigHostnameCrypt.Text
   $SDCard = $BootConfigDrive.SelectedItem
+  $Docker = $BootConfigDocker
 
 function Get-Md5Crypt {
   <#
@@ -528,25 +542,68 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
     $twotime= ($SDCard + "two_time_script.service")
     $twotimetext=@'
     [Unit]
-    Description=Unattended configuration of the Pi
+    Description=Unattended second configuration of the Pi
+    Wants=network-online.target
+    After=network-online.target
+    After=time-sync.target
+    Wants=time-sync.target
 
     [Install]
     WantedBy=multi-user.target
 
     [Service]
     Type=oneshot
+    ExecStartPre=/bin/sh -c 'until ping -c1 google.com; do sleep 1; done;'
     ExecStart=/usr/local/bin/post_encrypt.sh || true
 '@
     Set-Content -Path $twotime -Value $twotimetext -NoNewLine
+
+#--------------[docker_setup.sh file]----------------------
+$dockerfile = @'
+echo 'Starting docker setup' | systemd-cat -t docker -p warning
+curl -fsSL https://get.docker.com -o get-docker.sh | systemd-cat -t docker -p warning
+sh get-docker.sh | systemd-cat -t docker -p warning
+wait
+apt-get install -y -qq docker-ce-rootless-extras | systemd-cat -t docker
+usermod -aG docker pi | systemd-cat -t docker -p warning
+sh -eux <<EOF
+# Install newuidmap & newgidmap binaries
+
+apt-get install -y uidmap | systemd-cat -t docker -p warning
+EOF
+
+curl -L https://github.com/containers/fuse-overlayfs/releases/download/v1.7.1/fuse-overlayfs-armv7l -o fuse-overlayfs | systemd-cat -t docker -p warning
+chmod +x fuse-overlayfs | systemd-cat -t docker -p warning
+mv fuse-overlayfs /usr/bin | systemd-cat -t docker -p warning
+
+curl -o slirp4netns --fail -L https://github.com/rootless-containers/slirp4netns/releases/download/v1.1.12/slirp4netns-$(uname -m) | systemd-cat -t docker -p warning
+chmod +x slirp4netns | systemd-cat -t docker -p warning
+mv slirp4netns /usr/bin | systemd-cat -t docker -p warning
+
+wait
+echo "dockerd-rootless-setuptool.sh install --force > ./docker_rootless_install_log 2> ./docker_rootless_install_log && sed -i 's/dockerd/# dockerd/' /home/pi/.bashrc" >> /home/pi/.bashrc
+#sudo -u pi -i export XDG_RUNTIME_DIR=/run/user/$UID && dockerd-rootless-setuptool.sh install --force
+#su - pi -c 'export XDG_RUNTIME_DIR=/run/user/$UID && dockerd-rootless-setuptool.sh install --force' | systemd-cat -t docker -p warning
+wait
+
+'@
+
 
 #--------------[post_encrypt.sh]-------------------
   $postencrypt = ($SDCard + "post_encrypt.sh")
   $postencrypttext = @'
 #!/bin/bash
-  update-rpi-initramfs -u
+
+
+'@ + $(if ($BootConfigDocker.Checked){$dockerfile} Else {""}) +
+@'
+
+wait
+update-rpi-initramfs -u
+
+passwd -u pi
+rm /etc/nologin
   systemctl disable two_time_script.service
-  passwd -u pi
-  rm /etc/nologin
 '@
   Set-Content -Path $postencrypt -Value $postencrypttext -NoNewLine
 
@@ -576,21 +633,23 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   e2fsck -f /dev/mmcblk0p2
   echo 'Reduce filesystem'
   sdsize1=$(resize2fs -fM /dev/mmcblk0p2 | awk 'NR==2 {print $7}')
-  sdsize2=$(expr $(expr $sdsize1 + 3 - $(expr $(expr $sdsize1 - 1) % 4)) / 4)
+  sdsize2=$(expr $(expr $sdsize1 / 256) + 1)
   echo 'Create backup copy of filesystem. This takes minutes...'
-  dd if=/dev/mmcblk0p2 of=/dev/sda bs=16M count=$sdsize2
+  dd if=/dev/mmcblk0p2 bs=1M count=$sdsize2 | pigz -1 | dd of=/dev/sda
   echo 'Encrypt filesystem'
   i="0"
   while [ $i -eq 0 ]
   do
-  cryptsetup -v --type luks2 --cipher aes-xts-plain64 --pbkdf argon2id --key-size 512 --hash sha256 --iter-time 4000 --verify-passphrase --use-random luksFormat /dev/mmcblk0p2 && i=$[$i+1]
+  cryptsetup -v --type luks2 --cipher aes-xts-plain64 --pbkdf argon2id --key-size 256 --hash sha256 --iter-time 4000 --verify-passphrase --use-random luksFormat /dev/mmcblk0p2 && i=$[$i+1]
+  #cryptsetup -v --type luks2 --cipher aes-xts-plain64 --pbkdf argon2id --key-size 512 --hash sha256 --iter-time 4000 --verify-passphrase --use-random luksFormat /dev/mmcblk0p2 && i=$[$i+1]
   done
   echo 'Open access to encrypted filesystem'
   cryptsetup --allow-discards --persistent open /dev/mmcblk0p2 sdcard
   echo 'Copy backup filesystem into encrypted filesystem'
-  dd if=/dev/sda of=/dev/mapper/sdcard bs=16M count=$sdsize2
+  dd if=/dev/sda | pigz -d | dd of=/dev/mapper/sdcard bs=1M
   echo 'Increase filesystem again'
   resize2fs -f /dev/mapper/sdcard
+  umount /dev/mapper/sdcard
   echo 'Encryption setup completed, rebooting'
   killall -9 sh
 '@
@@ -646,6 +705,7 @@ $DecryptPWCrypt = Get-Md5Crypt -String $DecryptPW -SaltSize 8
   . /usr/share/initramfs-tools/hook-functions
 
   copy_exec /usr/bin/sdmem /usr/bin
+  copy_exec /usr/bin/pigz /usr/bin
   copy_exec /sbin/fdisk /sbin
   copy_exec /sbin/dumpe2fs /sbin
   copy_exec /sbin/resize2fs /sbin
@@ -969,6 +1029,7 @@ Set-Content -Path $preencrypt -Value $preencrypttext -NoNewLine
   $Cmdline = ($SDCard + "cmdline.txt")
   $unattended = ($SDCard + "unattended")
   $wpasupplicant = ($SDCard +"wpa_supplicant.conf")
+  $dockerfilename = ($SDCard + "docker_setup.sh")
   $Inittext =  " init=/bin/bash -c `"mount -t proc proc /proc; mount -t sysfs sys /sys; mount /boot; sed -i 's/\r$//' /boot/unattended; source /boot/unattended`""
   If (Test-Path ($Cmdline)) {
     $CmdlineContent = (((Get-Content $Cmdline) -csplit "( init)")[0] + $Inittext)
@@ -1010,6 +1071,9 @@ passwd --expire pi
 passwd -l pi
 # Remove autostart of welcome to raspberry pi
 rm /etc/xdg/autostart/piwiz.desktop
+# Set up time sync for docker install
+ln -s /lib/systemd/system/systemd-time-wait-sync.service /etc/systemd/system/multi-user.target.wants/
+
 # Expand file system
 canexpand=``raspi-config nonint get_can_expand``; if [ `"`$canexpand`" -eq `"0`" ]; then raspi-config nonint do_expand_rootfs; fi
 # remove CRs from pre_encrypt.sh
@@ -1081,6 +1145,8 @@ network={
   $BootConfigTZ.Visible = $false
   $BootConfigLocaleLabel.Visible = $false
   $BootConfigLocale.Visible = $false
+  $BootConfigDockerLabel.Visible = $false
+  $BootConfigDocker.Visible = $false
   $cancelBtn.text = "Close"
 }
 
@@ -1124,6 +1190,8 @@ If ($BootDrives.length -ne 0) {
   $BootConfigTZ.Visible = $true
   $BootConfigLocaleLabel.Visible = $true
   $BootConfigLocale.Visible = $true
+  $BootConfigDockerLabel.Visible = $true
+  $BootConfigDocker.Visible = $true
 }else{
   $BootConfigFound.text = "No SD Cards found"
   $BootConfigFound.ForeColor = "#D0021B"
