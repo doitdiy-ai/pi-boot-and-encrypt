@@ -580,6 +580,10 @@ curl -o slirp4netns --fail -L https://github.com/rootless-containers/slirp4netns
 chmod +x slirp4netns | systemd-cat -t docker -p warning
 mv slirp4netns /usr/bin | systemd-cat -t docker -p warning
 
+mkdir -p /usr/local/lib/docker/cli-plugins/
+curl -SL https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-linux-armv7 -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod a+x /usr/local/lib/docker/cli-plugins/docker-compose
+
 wait
 echo "dockerd-rootless-setuptool.sh install --force > ./docker_rootless_install_log 2> ./docker_rootless_install_log && sed -i 's/dockerd/# dockerd/' /home/pi/.bashrc" >> /home/pi/.bashrc
 #sudo -u pi -i export XDG_RUNTIME_DIR=/run/user/$UID && dockerd-rootless-setuptool.sh install --force
@@ -649,7 +653,6 @@ rm /etc/nologin
   dd if=/dev/sda | pigz -d | dd of=/dev/mapper/sdcard bs=1M
   echo 'Increase filesystem again'
   resize2fs -f /dev/mapper/sdcard
-  umount /dev/mapper/sdcard
   echo 'Encryption setup completed, rebooting'
   killall -9 sh
 '@
