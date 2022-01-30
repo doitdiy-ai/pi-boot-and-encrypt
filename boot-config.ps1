@@ -680,7 +680,7 @@ rm /etc/nologin
 
 '@ + "  mypassword=`'"+$DecryptPWCrypt+"`'" + @'
 
-  sed -i 's%echo "root:\*:0:0::${home#$DESTDIR}:/bin/sh" >"$DESTDIR/etc/passwd"%mypassword='"'$mypassword'"'\necho "root:$mypassword:0:0::${home#$DESTDIR}:/bin/sh" >"$DESTDIR/etc/passwd"%' /usr/share/initramfs-tools/hooks/dropbear
+  sed -i 's%echo "root:\*%mypassword='"'$mypassword'"'\necho "root:$mypassword%' /usr/share/initramfs-tools/hooks/dropbear
 
   echo 'DROPBEAR_OPTIONS="-R -p 23"' >> /etc/dropbear-initramfs/config
   cat /boot/*.pub >> /etc/dropbear-initramfs/authorized_keys
@@ -1059,6 +1059,14 @@ raspi-config nonint do_vnc 0
 raspi-config nonint do_hostname $($BootConfigHostname.Text)
 # Set the screen resolution to 1920 x 1080, especially important for VNC to work if running headless
 raspi-config nonint do_resolution 2 82
+if  [ `"`$(source /etc/os-release; echo `"`"`"`$PRETTY_NAME`"`"`")`" == `"Raspbian GNU/Linux 11 (bullseye)`" ];
+then
+  sudo raspi-config nonint do_vnc_resolution 1920x1080
+  rfkill unblock wifi
+  for filename in /var/lib/systemd/rfkill/*:wlan ; do
+    echo 0 > `$filename
+  done
+fi
 # enable the camera (optional)
 raspi-config nonint do_camera 0
 # Set timezone
@@ -1114,9 +1122,10 @@ sleep 5"
 
 #--------------[wpa_supplicant.conf file]-----------------
   $wpasupplicanttext = "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
 country=$(($BootConfigLocale.Text).Substring(($BootConfigLocale.Text).Length - 2))
+ap_scan=1
 
+update_config=1
 network={
         ssid=`"$($BootConfigSSID.Text)`"
         psk=`"$($BootConfigSSIDPW.Text)`"
